@@ -1,0 +1,61 @@
+version: '3.7'
+
+services:
+  airflow-webserver:
+    image: apache/airflow:latest
+    restart: always
+    depends_on:
+      - airflow-db
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-db/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__FERNET_KEY=my_fernet_key
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/keys/bigquery-key.json
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/keys:/opt/airflow/keys
+    ports:
+      - "8080:8080"
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:latest
+    restart: always
+    depends_on:
+      - airflow-webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-db/airflow
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/keys/bigquery-key.json
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/keys:/opt/airflow/keys
+    command: scheduler
+
+  airflow-db:
+    image: postgres:13
+    restart: always
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  dbt-runner:
+    image: ghcr.io/dbt-labs/dbt-bigquery:latest
+    restart: always
+    volumes:
+      - ./dbt:/usr/app/dbt
+      - ./airflow/keys:/usr/app/keys
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/usr/app/keys/bigquery-key.json
+    entrypoint: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
+
+volumes:
+  postgres_data:
