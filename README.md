@@ -14,7 +14,6 @@ dbt_airflow_project/
 │   └─ monthly_category_sales.sql # Kategori bazlı aylık satış modeli
 │─ yml/
 │   ├─ docker-compose.yml       # Docker yapılandırma dosyası
-│   └─ bigquery-key.json        # BigQuery kimlik doğrulama dosyası (Gizli tut!)
 │─ README.md                    # Proje açıklama dosyası
 
 -- Kurulum & Kullanım --
